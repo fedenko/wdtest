@@ -1,1 +1,32 @@
-Hello World!
+{% load staticfiles %}
+{% load thumbnail %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Web Dev Test</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static "imglist/css/bootstrap.min.css" %}" rel="stylesheet">
+  </head>
+
+  <body>
+    <div class="container">
+
+      <h3>Web Dev Test</h3>
+      <ul class="thumbnails">
+        {% for image in images %}
+          <li>
+            <div class="thumbnail">
+              <img src="{% thumbnail image.image 170x135 crop %}" alt="">
+              <p>{{ image.title | truncatechars:28 }}</p>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+
+    </div>
+    <script src="{% static "imglist/js/jquery-1.10.2.min.js" %}"></script>
+    <script src="{% static "imglist/js/bootstrap.min.js" %}"></script>
+  </body>
+</html>
