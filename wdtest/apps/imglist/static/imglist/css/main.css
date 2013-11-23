@@ -1,0 +1,14 @@
+.context-menu-btn {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+/*  display: none;*/
+}
+
+div.thumbnail {
+  position: relative;
+}
+
+/*div.thumbnail:hover .context-menu-btn {*/
+/*  display: inline-block;*/
+/*}*/
