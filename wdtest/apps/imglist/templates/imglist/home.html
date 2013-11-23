@@ -23,9 +23,9 @@
               <p>{{ image.title | truncatechars:28 }}</p>
               <button
                 class="btn btn-small context-menu-btn"
-                data-content="Test"
                 data-placement="bottom"
-                data-toggle="popover">
+                data-toggle="popover"
+                data-original-title="Your Lists">
                   <i class="icon-list"></i>
               </button>
             </div>
@@ -36,5 +36,18 @@
     <script src="{% static "imglist/js/jquery-1.10.2.min.js" %}"></script>
     <script src="{% static "imglist/js/bootstrap.min.js" %}"></script>
     <script src="{% static "imglist/js/main.js" %}"></script>
+    <div id="context-menu-content">
+<!--      <label class="checkbox">-->
+<!--        <input type="checkbox" id="inlineCheckbox1" value="option1"> list 1-->
+<!--      </label>-->
+<!--      <label class="checkbox">-->
+<!--        <input type="checkbox" id="inlineCheckbox1" value="option1"> list 2-->
+<!--      </label>-->
+      <form class="form-inline" action="{% url "list_add" %}" method="post">
+        <input type="text" placeholder="New List" class="input-small">
+        {% csrf_token %}
+        <button class="btn btn-small btn-primary add-btn">Add</button>
+      </form>
+    <div>
   </body>
 </html>

@@ -12,3 +12,8 @@ div.thumbnail {
 /*div.thumbnail:hover .context-menu-btn {*/
 /*  display: inline-block;*/
 /*}*/
+
+
+#context-menu-content {
+  display: none;
+}
