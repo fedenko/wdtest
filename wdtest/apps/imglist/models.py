@@ -14,7 +14,7 @@ class ImageList(models.Model):
 class Image(models.Model):
     title = models.CharField(max_length=255)
     image = models.ImageField(upload_to=UPLOAD_TO)
-    lists= models.ManyToManyField(ImageList, related_name="images")
+    lists = models.ManyToManyField(ImageList, related_name="images", blank=True, null=True)
 
     def __unicode__(self):
         return self.title
