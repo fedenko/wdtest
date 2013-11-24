@@ -18,7 +18,7 @@
       <ul class="thumbnails">
         {% for image in images %}
           <li>
-            <div class="thumbnail">
+            <div class="thumbnail" data-image-id="{{ image.id }}">
               <img src="{% thumbnail image.image 170x135 crop %}" alt="">
               <p>{{ image.title | truncatechars:28 }}</p>
               <button
@@ -43,10 +43,11 @@
 <!--      <label class="checkbox">-->
 <!--        <input type="checkbox" id="inlineCheckbox1" value="option1"> list 2-->
 <!--      </label>-->
-      <form class="form-inline" action="{% url "list_add" %}" method="post">
-        <input type="text" placeholder="New List" class="input-small">
+      <form id="add-list" class="form-inline" action="{% url "list_add" %}" method="post">
+        <input type="text" name="list_name" placeholder="New List" class="input-small">
         {% csrf_token %}
-        <button class="btn btn-small btn-primary add-btn">Add</button>
+        <input type="hidden" name="image_id" value="">
+        <button type="submit" class="btn btn-small btn-primary add-btn">Add</button>
       </form>
     <div>
   </body>
