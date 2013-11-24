@@ -3,3 +3,4 @@
 *.sqlite3
 wdtest/media/
 wdtest/settings_local.py
+img.tar.gz
