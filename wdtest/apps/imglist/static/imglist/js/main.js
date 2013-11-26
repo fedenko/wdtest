@@ -45,7 +45,7 @@
         e = $(this);
         e.unbind("click");
         return $.ajax({
-          url: "/lists/get/",
+          url: "/lists/getall/",
           type: "post",
           dataType: "json",
           data: {
@@ -55,7 +55,7 @@
             if (!data.success) {
               return alert(data.error);
             } else {
-              self.updatePopover(data);
+              self.initPopover(data);
               return self.showPopover();
             }
           },
@@ -70,24 +70,20 @@
       return Mustache.render(this.template, data);
     };
 
-    PopoverWidget.prototype.updatePopover = function(data) {
-      var e, self, tip;
+    PopoverWidget.prototype.initPopover = function(data) {
+      var self, tip;
       self = this;
-      e = $(this.el);
-      if (e.data("popover")) {
-        e.popover('destroy');
-      }
-      e.popover({
+      $(this.el).popover({
         html: true,
         content: this.render({
           imageId: this.imageId,
           lists: data.lists
         })
       });
-      tip = e.data("popover").tip();
+      tip = $(this.el).data("popover").tip();
       tip.on("submit", ".add-list", function() {
         $.ajax({
-          url: "/lists/add/",
+          url: "/lists/new/",
           type: "post",
           dataType: "json",
           data: $(this).serialize(),
@@ -95,8 +91,7 @@
             if (!data.success) {
               return alert(data.error);
             } else {
-              self.updatePopover(data);
-              return self.showPopover();
+              return self.updatePopover(data);
             }
           },
           error: function(xhr, err) {
@@ -105,6 +100,39 @@
         });
         return false;
       });
+      tip.on("change", ":checkbox", function() {
+        var $checkbox, url;
+        $checkbox = $(this);
+        url = $checkbox.is(':checked') ? "/lists/add/" : "/lists/remove/";
+        return $.ajax({
+          url: url,
+          type: "post",
+          dataType: "json",
+          data: {
+            image_id: self.imageId,
+            list_id: $checkbox.val()
+          },
+          success: function(data) {
+            if (!data.success) {
+              return alert(data.error);
+            } else {
+              return self.updatePopover(data);
+            }
+          },
+          error: function(xhr, err) {
+            return alert("Error");
+          }
+        });
+      });
+    };
+
+    PopoverWidget.prototype.updatePopover = function(data) {
+      var tip;
+      tip = $(this.el).data("popover").tip();
+      $(".popover-content", tip).html(this.render({
+        imageId: this.imageId,
+        lists: data.lists
+      }));
     };
 
     PopoverWidget.prototype.showPopover = function() {

@@ -52,7 +52,7 @@ class Home(ListView):
     context_object_name = 'images'
 
 
-class AddList(View, AjaxableResponseMixin):
+class NewList(View, AjaxableResponseMixin):
     def post(self, request, *args, **kwargs):
         list_name = request.REQUEST.get("list_name", None)
         if not list_name:
@@ -83,6 +83,21 @@ class GetLists(View, AjaxableResponseMixin):
             "lists" : get_lists(image)
         })
 
+class AddToList(View, AjaxableResponseMixin):
+    """
+    Adds image to the list
+    """
+    def post(self, request, *args, **kwargs):
+        image = get_image(request)
+        if not image:
+            return self.error("Image doesn't exist.")
+        lst = get_object_or_None(ImageList, pk=request.REQUEST.get("list_id"))
+        if not lst:
+            return self.error("Image list doesn't exist.")
+        image.lists.add(lst)
+        return self.success({
+            "lists" : get_lists(image)
+        })
 
 class RemoveFromList(View, AjaxableResponseMixin):
     """

@@ -1,10 +1,11 @@
 from django.conf.urls import patterns, url
-from .views import Home, AddList, GetLists, RemoveFromList
+from .views import Home, NewList, GetLists, AddToList, RemoveFromList
 
 urlpatterns = patterns(
     '',
     url(r'^$', Home.as_view(), name='home'),
-    url(r'^lists/add/$', AddList.as_view(), name='list_add'),
-    url(r'^lists/get/$', GetLists.as_view(), name='list_getall'),
-    url(r'^lists/remove/$', RemoveFromList.as_view(), name='list_rmfrom'),
+    url(r'^lists/new/$', NewList.as_view(), name='list_new'),
+    url(r'^lists/getall/$', GetLists.as_view(), name='list_getall'),
+    url(r'^lists/add/$', AddToList.as_view(), name='list_add'),
+    url(r'^lists/remove/$', RemoveFromList.as_view(), name='list_remove'),
 )

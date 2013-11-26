@@ -40,7 +40,7 @@ class window.PopoverWidget
       e = $(this)
       e.unbind "click"
       $.ajax
-        url: "/lists/get/"
+        url: "/lists/getall/"
         type: "post"
         dataType: "json"
         data:
@@ -50,7 +50,7 @@ class window.PopoverWidget
           unless data.success
             alert data.error
           else
-            self.updatePopover data
+            self.initPopover data
             self.showPopover()
         error: (xhr, err) ->
           alert "Error"
@@ -58,20 +58,19 @@ class window.PopoverWidget
   render: (data) ->
     Mustache.render(@template, data)
 
-  updatePopover: (data) ->
+  initPopover: (data) ->
     self = @
-    e  = $(@el)
-    if e.data("popover")
-      e.popover 'destroy'
-    e.popover
+    $(@el).popover
       html: true
       content: @render
         imageId: @imageId
         lists: data.lists
-    tip = e.data("popover").tip()
+
+    tip = $(@el).data("popover").tip()
+
     tip.on "submit", ".add-list", ->
       $.ajax
-        url: "/lists/add/"
+        url: "/lists/new/"
         type: "post"
         dataType: "json"
         data: $(this).serialize()
@@ -80,11 +79,36 @@ class window.PopoverWidget
             alert data.error
           else
             self.updatePopover data
-            self.showPopover()
         error: (xhr, err) ->
           alert "Error"
 
       false
+
+    tip.on "change", ":checkbox", ->
+      $checkbox = $(@)
+      url = if $checkbox.is(':checked') then "/lists/add/" else "/lists/remove/"
+      $.ajax
+        url: url
+        type: "post"
+        dataType: "json"
+        data:
+          image_id: self.imageId
+          list_id: $checkbox.val()
+        success: (data) ->
+          unless data.success
+            alert data.error
+          else
+            self.updatePopover data
+        error: (xhr, err) ->
+          alert "Error"
+    return
+
+  updatePopover: (data) ->
+    tip = $(@el).data("popover").tip()
+    $(".popover-content", tip).html( @render(
+      imageId: @imageId
+      lists: data.lists
+    ))
     return
 
   showPopover: ->
