@@ -1,8 +1,31 @@
 import json
 from django.http import HttpResponse
 from django.views.generic import ListView, View
+from annoying.functions import get_object_or_None
 
 from .models import Image, ImageList
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+def get_image(request):
+    return get_object_or_None(Image, pk=request.REQUEST.get("image_id"))
+
+def get_lists(image):
+    """Returns lists for image object"""
+    image_lists = image.lists.all()
+    lists = ImageList.objects.order_by('title')
+    return [{
+        "title": lst.title,
+        "id": lst.pk,
+        "in": lst in image_lists
+    } for lst in lists]
+
 
 class AjaxableResponseMixin(object):
 
@@ -10,6 +33,17 @@ class AjaxableResponseMixin(object):
         data = json.dumps(context)
         response_kwargs['content_type'] = 'application/json'
         return HttpResponse(data, **response_kwargs)
+
+    def success(self, data):
+        resp = { "success": True }
+        resp.update(data)
+        return self.render_to_json_response(resp)
+
+    def error(self, message):
+        return self.render_to_json_response({
+            "success": False,
+            "error": message
+        })
 
 
 class Home(ListView):
@@ -20,35 +54,48 @@ class Home(ListView):
 
 class AddList(View, AjaxableResponseMixin):
     def post(self, request, *args, **kwargs):
-        image_id = request.REQUEST.get("image_id", 0)
         list_name = request.REQUEST.get("list_name", None)
         if not list_name:
-            return self.render_to_json_response({
-                "success": False,
-                "error": "Your list must have a name."
-            })
+            return self.error("Your list must have a name.")
         image_list, created = ImageList.objects.get_or_create(
             title=list_name,
             defaults={
-                "creator_ip": self.get_client_ip(request)
+                "creator_ip": get_client_ip(request)
             }
         )
         if not created:
-            return self.render_to_json_response({
-                "success": False,
-                "error": "You already have a list named {}.".format(list_name)
-            })
-        image = Image.objects.get(pk=image_id)
+            return self.error("You already have a list named {}.".format(list_name))
+        image = get_image(request)
+        if not image:
+            return self.error("Image doesn't exist.")
         image.lists.add(image_list)
-        return self.render_to_json_response({
-            "success": True,
+        return self.success({
+            "lists" : get_lists(image)
         })
 
-    @staticmethod
-    def get_client_ip(request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+
+class GetLists(View, AjaxableResponseMixin):
+    def post(self, request, *args, **kwargs):
+        image = get_image(request)
+        if not image:
+            return self.error("Image doesn't exist.")
+        return self.success({
+            "lists" : get_lists(image)
+        })
+
+
+class RemoveFromList(View, AjaxableResponseMixin):
+    """
+    Removes image form the list
+    """
+    def post(self, request, *args, **kwargs):
+        image = get_image(request)
+        if not image:
+            return self.error("Image doesn't exist.")
+        lst = get_object_or_None(ImageList, pk=request.REQUEST.get("list_id"))
+        if not lst:
+            return self.error("Image list doesn't exist.")
+        image.lists.remove(lst)
+        return self.success({
+            "lists" : get_lists(image)
+        })
