@@ -1,98 +1,137 @@
-function csrfSafeMethod(method) {
-    // these HTTP methods do not require CSRF protection
-    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-}
+(function() {
+  var csrfSafeMethod, getCookie, sameOrigin;
 
-function sameOrigin(url) {
-    // test that a given url is a same-origin URL
-    // url could be relative or scheme relative or absolute
-    var host = document.location.host; // host + port
-    var protocol = document.location.protocol;
-    var sr_origin = '//' + host;
-    var origin = protocol + sr_origin;
-    // Allow absolute or scheme relative URLs to same origin
-    return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
-        (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
-        // or any other URL that isn't scheme relative or absolute i.e relative.
-        !(/^(\/\/|http:|https:).*/.test(url));
-}
+  csrfSafeMethod = function(method) {
+    return /^(GET|HEAD|OPTIONS|TRACE)$/.test(method);
+  };
 
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie != '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = jQuery.trim(cookies[i]);
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
+  sameOrigin = function(url) {
+    var host, origin, protocol, sr_origin;
+    host = document.location.host;
+    protocol = document.location.protocol;
+    sr_origin = "//" + host;
+    origin = protocol + sr_origin;
+    return (url === origin || url.slice(0, origin.length + 1) === origin + "/") || (url === sr_origin || url.slice(0, sr_origin.length + 1) === sr_origin + "/") || !(/^(\/\/|http:|https:).*/.test(url));
+  };
+
+  getCookie = function(name) {
+    var cookie, cookieValue, cookies, i;
+    cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      cookies = document.cookie.split(";");
+      i = 0;
+      while (i < cookies.length) {
+        cookie = jQuery.trim(cookies[i]);
+        if (cookie.substring(0, name.length + 1) === (name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
         }
+        i++;
+      }
     }
     return cookieValue;
-}
+  };
 
-$(function() {
+  window.PopoverWidget = (function() {
 
-  $.ajaxSetup({
-      beforeSend: function(xhr, settings) {
-          if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
-              // Send the token to same-origin, relative URLs only.
-              // Send the token only if the method warrants CSRF protection
-              // Using the CSRFToken value acquired earlier
-              var csrftoken = getCookie('csrftoken');
-              xhr.setRequestHeader("X-CSRFToken", csrftoken);
+    function PopoverWidget(el) {
+      var self;
+      this.el = el;
+      this.template = $("#context-menu-content").html();
+      this.imageId = $(this.el).data("image-id");
+      self = this;
+      $(this.el).bind("click", function() {
+        var e;
+        e = $(this);
+        e.unbind("click");
+        return $.ajax({
+          url: "/lists/get/",
+          type: "post",
+          dataType: "json",
+          data: {
+            image_id: self.imageId
+          },
+          success: function(data) {
+            if (!data.success) {
+              return alert(data.error);
+            } else {
+              self.updatePopover(data);
+              return self.showPopover();
+            }
+          },
+          error: function(xhr, err) {
+            return alert("Error");
           }
+        });
+      });
+    }
+
+    PopoverWidget.prototype.render = function(data) {
+      return Mustache.render(this.template, data);
+    };
+
+    PopoverWidget.prototype.updatePopover = function(data) {
+      var e, self, tip;
+      self = this;
+      e = $(this.el);
+      if (e.data("popover")) {
+        e.popover('destroy');
       }
-  });
+      e.popover({
+        html: true,
+        content: this.render({
+          imageId: this.imageId,
+          lists: data.lists
+        })
+      });
+      tip = e.data("popover").tip();
+      tip.on("submit", ".add-list", function() {
+        $.ajax({
+          url: "/lists/add/",
+          type: "post",
+          dataType: "json",
+          data: $(this).serialize(),
+          success: function(data) {
+            if (!data.success) {
+              return alert(data.error);
+            } else {
+              self.updatePopover(data);
+              return self.showPopover();
+            }
+          },
+          error: function(xhr, err) {
+            return alert("Error");
+          }
+        });
+        return false;
+      });
+    };
 
+    PopoverWidget.prototype.showPopover = function() {
+      return $(this.el).popover("show");
+    };
 
-  $(".context-menu-btn").bind('click',function() {
-    var e=$(this);
-    e.unbind('click');
-    var imageId =  e.data("image-id");
-    var template = $("#context-menu-content").html();
-    $.ajax({
-      url     : "/lists/get/",
-      type    : "post",
-      dataType: 'json',
-      data    : {image_id: imageId},
-      success : function( data ) {
-        if (!data.success){
-          alert(data.error);
-        } else {
-          var view = {
-            imageId: imageId,
-            lists: data.lists
-          };
-          e.popover({html: true, content: Mustache.render(template, view)}).popover('show');
+    return PopoverWidget;
+
+  })();
+
+  $(function() {
+    $.ajaxSetup({
+      beforeSend: function(xhr, settings) {
+        var csrftoken;
+        if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+          csrftoken = getCookie("csrftoken");
+          return xhr.setRequestHeader("X-CSRFToken", csrftoken);
         }
-      },
-      error   : function( xhr, err ) {
-         alert('Error');
       }
     });
-
-  });
-
-  $(document).on( "submit", ".add-list", function() {
-    $.ajax({
-      url     : "/lists/add/",
-      type    : "post",
-      dataType: 'json',
-      data    : $(this).serialize(),
-      success : function( data ) {
-        if (!data.success){
-          alert(data.error);
-        } else {
-          console.log(data);
-        }
-      },
-      error   : function( xhr, err ) {
-         alert('Error');
-      }
+    return $(".context-menu-btn").each(function() {
+      var pw;
+      pw = new PopoverWidget(this);
+      return $(this).data("popoverwidget", pw);
     });
-    return false;
   });
-});
+
+}).call(this);
+
+// Generated by CoffeeScript 1.5.0-pre
