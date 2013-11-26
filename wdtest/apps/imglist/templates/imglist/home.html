@@ -18,14 +18,15 @@
       <ul class="thumbnails">
         {% for image in images %}
           <li>
-            <div class="thumbnail" data-image-id="{{ image.id }}">
+            <div class="thumbnail">
               <img src="{% thumbnail image.image 170x135 crop %}" alt="">
               <p>{{ image.title | truncatechars:28 }}</p>
               <button
                 class="btn btn-small context-menu-btn"
                 data-placement="bottom"
                 data-toggle="popover"
-                data-original-title="Your Lists">
+                data-original-title="Your Lists"
+                data-image-id="{{ image.id }}">
                   <i class="icon-list"></i>
               </button>
             </div>
@@ -35,20 +36,28 @@
     </div>
     <script src="{% static "imglist/js/jquery-1.10.2.min.js" %}"></script>
     <script src="{% static "imglist/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "imglist/js/mustache.js" %}"></script>
     <script src="{% static "imglist/js/main.js" %}"></script>
-    <div id="context-menu-content">
-<!--      <label class="checkbox">-->
-<!--        <input type="checkbox" id="inlineCheckbox1" value="option1"> list 1-->
-<!--      </label>-->
-<!--      <label class="checkbox">-->
-<!--        <input type="checkbox" id="inlineCheckbox1" value="option1"> list 2-->
-<!--      </label>-->
-      <form id="add-list" class="form-inline" action="{% url "list_add" %}" method="post">
-        <input type="text" name="list_name" placeholder="New List" class="input-small">
-        {% csrf_token %}
-        <input type="hidden" name="image_id" value="">
-        <button type="submit" class="btn btn-small btn-primary add-btn">Add</button>
-      </form>
-    <div>
+    <script id="context-menu-content" type="text/x-mustache-template">
+      {% verbatim %}
+      <div style="width: 160px;">
+        <div id="list-container">
+        {{#lists}}
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" value="{{id}}" {{#in}}checked="1"{{/in}}>
+              {{title}}
+            </label>
+          </div>
+        {{/lists}}
+        </div>
+        <form class="form-inline add-list">
+          <input type="text" name="list_name" placeholder="New List" class="input-small">
+          <input type="hidden" name="image_id" value="{{ imageId }}">
+          <button type="submit" class="btn btn-small btn-primary add-btn">Add</button>
+        </form>
+      </div>
+      {% endverbatim %}
+    </script>
   </body>
 </html>
