@@ -1,5 +1,7 @@
 import json
 from django.http import HttpResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import ListView, View
 from annoying.functions import get_object_or_None
 
@@ -50,6 +52,10 @@ class Home(ListView):
     template_name = "imglist/home.html"
     model = Image
     context_object_name = 'images'
+
+    @method_decorator(ensure_csrf_cookie)
+    def dispatch(self, *args, **kwargs):
+        return super(Home, self).dispatch(*args, **kwargs)
 
 
 class NewList(View, AjaxableResponseMixin):
